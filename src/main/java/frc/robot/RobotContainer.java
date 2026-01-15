@@ -48,8 +48,6 @@ public class RobotContainer {
   
     SendableChooser<Command> m_chooser = new SendableChooser<>();
     
-    // The container for the robot. Contains subsystems, OI devices, and commands. 
-    
     public RobotContainer() {
       /* 
       NamedCommands.registerCommand("Shooter_al", shooter_alamina(s_yukari));
