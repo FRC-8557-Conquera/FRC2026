@@ -6,6 +6,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -18,7 +19,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+
 import java.io.File;
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import swervelib.SwerveDrive;
@@ -26,15 +31,39 @@ import swervelib.SwerveModule;
 import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
+import limelight.Limelight;
+import limelight.networktables.AngularVelocity3d;
+import limelight.networktables.LimelightPoseEstimator;
+import limelight.networktables.LimelightSettings.LEDMode;
+import limelight.networktables.Orientation3d;
+import limelight.networktables.PoseEstimate;
+import limelight.networktables.LimelightPoseEstimator.EstimationMode;
+
 
 public class SwerveSubsystem extends SubsystemBase {
 
+  Limelight limelightFront = new Limelight("limelight-front");
+  Limelight limelightBack = new Limelight("limelight-back");
+  //Limelight[] limelights = {limelightFront, limelightBack};
+  LimelightPoseEstimator limelightFrontPoseEstimator = limelightFront.createPoseEstimator(EstimationMode.MEGATAG2);
+  LimelightPoseEstimator limelightBackPoseEstimator = limelightBack.createPoseEstimator(EstimationMode.MEGATAG2);
 
   private Field2d field;
   public SwerveDrive swerveDrive;
   private File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
 
   public SwerveSubsystem() {
+// Set the limelight to use Pipeline LED control, with the Camera offset of 0, and save.
+    limelightFront.getSettings()
+         .withLimelightLEDMode(LEDMode.PipelineControl)
+         .withCameraOffset(Pose3d.kZero)
+         .save();
+    // Set the limelight to use Pipeline LED control, with the Camera offset of 0, and save.
+    limelightBack.getSettings()
+         .withLimelightLEDMode(LEDMode.PipelineControl)
+         .withCameraOffset(Pose3d.kZero)
+         .save();
+// TODO: Limelight pozlarını ekle
     RobotConfig config;
     SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
     try {
@@ -193,7 +222,35 @@ public class SwerveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    swerveDrive.updateOdometry();
-  }
 
+    swerveDrive.updateOdometry();
+
+
+    limelightFront.getSettings()
+		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
+												 new AngularVelocity3d(DegreesPerSecond.of(0)
+                         ,DegreesPerSecond.of(0),
+                          DegreesPerSecond.of(swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond)))))
+		    .save();
+    limelightFront.getSettings()
+		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
+												 new AngularVelocity3d(DegreesPerSecond.of(0)
+                         ,DegreesPerSecond.of(0),
+                          DegreesPerSecond.of(swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond)))))
+		    .save();
+    Optional<PoseEstimate> est1 = limelightFrontPoseEstimator.getPoseEstimate();
+    Optional<PoseEstimate> est2 = limelightBackPoseEstimator.getPoseEstimate();
+
+    est1.ifPresent(
+      (PoseEstimate estimate) -> {
+        swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);
+      }
+    );
+    est2.ifPresent(
+      (PoseEstimate estimate) -> {
+        swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);
+      }
+    );
+    swerveDrive.swerveDrivePoseEstimator.update(swerveDrive.getGyro().getRotation3d().toRotation2d(), swerveDrive.getModulePositions());
+  }
 }
