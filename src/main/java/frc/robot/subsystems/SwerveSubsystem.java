@@ -65,7 +65,7 @@ public class SwerveSubsystem extends SubsystemBase {
          .save();
 // TODO: Limelight pozlarını ekle
     RobotConfig config;
-    SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
+    SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.NONE;
     try {
       config = RobotConfig.fromGUISettings();
       boolean enableFeedforward = true;
@@ -104,9 +104,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
     field = new Field2d();
     SmartDashboard.putData("Field", field);
-    // napıyonuz siz kod yazmayın kapatın robotu
     swerveDrive.setModuleEncoderAutoSynchronize(false, 1);
-    swerveDrive.setAngularVelocityCompensation(true, true, 0.1);
+    swerveDrive.setAngularVelocityCompensation(true, true, 0.2);
     swerveDrive.setModuleStateOptimization(true);
     swerveDrive.setAutoCenteringModules(false);
     swerveDrive.setHeadingCorrection(true);
