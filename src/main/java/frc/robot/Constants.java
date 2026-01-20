@@ -57,15 +57,13 @@ public final class Constants {
     public static final double driveKA = 0.27;
 
     /* Drive Motor Conversion Factors */
-    public static final double driveConversionPositionFactor =
-        (wheelDiameter * Math.PI) / driveGearRatio;
+    public static final double driveConversionPositionFactor =(wheelDiameter * Math.PI) / driveGearRatio;
     public static final double driveConversionVelocityFactor = driveConversionPositionFactor / 60.0;
     public static final double angleConversionFactor = 360.0 / angleGearRatio;
 
     /* Swerve Profiling Values */
     public static final double maxSpeed = 5.0; // meters per second
-    public static final double maxAngularVelocity =
-        maxSpeed / Math.hypot(trackWidth / 2, wheelBase / 2); // 11.65
+    public static final double maxAngularVelocity = maxSpeed / Math.hypot(trackWidth / 2, wheelBase / 2); // 11.65
 
     /* Neutral Modes */
     public static final IdleMode angleNeutralMode = IdleMode.kBrake;

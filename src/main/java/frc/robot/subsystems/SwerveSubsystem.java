@@ -5,6 +5,7 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -53,27 +54,27 @@ public class SwerveSubsystem extends SubsystemBase {
   LimelightPoseEstimator limelightFrontPoseEstimator = limelightFront.createPoseEstimator(EstimationMode.MEGATAG2);
   LimelightPoseEstimator limelightBackPoseEstimator = limelightBack.createPoseEstimator(EstimationMode.MEGATAG2);
 */
+
   private Field2d field;
   public SwerveDrive swerveDrive;
   private File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
 
   public SwerveSubsystem() {
-// Set the limelight to use Pipeline LED control, with the Camera offset of 0, and save.
+
     /*limelightFront.getSettings()
          .withLimelightLEDMode(LEDMode.PipelineControl)
          .withCameraOffset(Pose3d.kZero)
          .save();
-    // Set the limelight to use Pipeline LED control, with the Camera offset of 0, and save.
+
     limelightBack.getSettings()
          .withLimelightLEDMode(LEDMode.PipelineControl)
          .withCameraOffset(Pose3d.kZero)
          .save();*/
-// TODO: Limelight pozlarını ekle
 limelightBack.getSettings()
          .withLimelightLEDMode(LEDMode.PipelineControl)
          .withCameraOffset(new Pose3d(
           new Translation3d(0, -0.38, 0.2),
-          new Rotation3d(0,0,Math.PI/2)
+         new Rotation3d(0, 0, -Math.PI / 2)
          ))
          .save();
     RobotConfig config;
@@ -82,6 +83,14 @@ limelightBack.getSettings()
       config = RobotConfig.fromGUISettings();
       boolean enableFeedforward = true;
       swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(Constants.Swerve.maxSpeed);
+
+    swerveDrive.swerveDrivePoseEstimator.setVisionMeasurementStdDevs(
+      VecBuilder.fill(
+        0.5,   // X (m)
+        0.5,   // Y (m)
+        Math.toRadians(999) // heading = gyro only
+    )
+);
       AutoBuilder.configure(
           this::getPose,
           this::resetOdometry,
@@ -239,13 +248,13 @@ limelightBack.getSettings()
 		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
 												 new AngularVelocity3d(DegreesPerSecond.of(0)
                          ,DegreesPerSecond.of(0),
-                          DegreesPerSecond.of(swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond)))))
-                          // TODO: 0'dan değiştir
-		    .save();Optional<PoseEstimate> est1 = limelightBackPoseEstimator.getPoseEstimate();
+                          DegreesPerSecond.of(swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond)))));
+		 
+    Optional<PoseEstimate> est1 = limelightBackPoseEstimator.getPoseEstimate();
         est1.ifPresent(
       (PoseEstimate estimate) -> {
-        swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);}
-    );
+        swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);
+      });
 
         /*  
     limelightFront.getSettings()
@@ -274,5 +283,5 @@ limelightBack.getSettings()
       }
     );
     swerveDrive.swerveDrivePoseEstimator.update(swerveDrive.getGyro().getRotation3d().toRotation2d(), swerveDrive.getModulePositions());*/
-  }
+    }
 }
