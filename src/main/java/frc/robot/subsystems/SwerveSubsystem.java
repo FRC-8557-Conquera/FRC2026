@@ -8,7 +8,9 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -19,10 +21,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import edu.wpi.first.apriltag.AprilTagFields;
 
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -41,7 +45,8 @@ import limelight.networktables.LimelightPoseEstimator.EstimationMode;
 
 
 public class SwerveSubsystem extends SubsystemBase {
-
+  Limelight limelightBack = new Limelight("limelight-back");
+  LimelightPoseEstimator limelightBackPoseEstimator = limelightBack.createPoseEstimator(EstimationMode.MEGATAG2);
   /*Limelight limelightFront = new Limelight("limelight-front");
   Limelight limelightBack = new Limelight("limelight-back");
   //Limelight[] limelights = {limelightFront, limelightBack};
@@ -64,6 +69,13 @@ public class SwerveSubsystem extends SubsystemBase {
          .withCameraOffset(Pose3d.kZero)
          .save();*/
 // TODO: Limelight pozlarını ekle
+limelightBack.getSettings()
+         .withLimelightLEDMode(LEDMode.PipelineControl)
+         .withCameraOffset(new Pose3d(
+          new Translation3d(0, -0.38, 0.2),
+          new Rotation3d(0,0,Math.PI/2)
+         ))
+         .save();
     RobotConfig config;
     SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
     try {
@@ -109,6 +121,7 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.setModuleStateOptimization(true);
     swerveDrive.setAutoCenteringModules(false);
     swerveDrive.setHeadingCorrection(true);
+
   }
 
   public Rotation2d getHeading() {
@@ -222,9 +235,22 @@ public class SwerveSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
 
-    swerveDrive.updateOdometry();
+    limelightBack.getSettings()
+		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
+												 new AngularVelocity3d(DegreesPerSecond.of(0)
+                         ,DegreesPerSecond.of(0),
+                          DegreesPerSecond.of(swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond)))))
+                          // TODO: 0'dan değiştir
+		    .save();Optional<PoseEstimate> est1 = limelightBackPoseEstimator.getPoseEstimate();
+        est1.ifPresent(
+      (PoseEstimate estimate) -> {
+        swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);}
+    );
 
-/*  
+        swerveDrive.swerveDrivePoseEstimator.update(swerveDrive.getGyro().getRotation3d().toRotation2d(), swerveDrive.getModulePositions());
+
+
+        /*  
     limelightFront.getSettings()
 		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
 												 new AngularVelocity3d(DegreesPerSecond.of(0)
