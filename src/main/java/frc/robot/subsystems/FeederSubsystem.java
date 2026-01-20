@@ -34,7 +34,7 @@ public class FeederSubsystem extends SubsystemBase {
   }
 
   public void reverse() {
-    feeder.set(-0.5);
+    feeder.set(-0.7);
   }
 
   public void stop() {

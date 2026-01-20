@@ -42,19 +42,19 @@ import limelight.networktables.LimelightPoseEstimator.EstimationMode;
 
 public class SwerveSubsystem extends SubsystemBase {
 
-  Limelight limelightFront = new Limelight("limelight-front");
+  /*Limelight limelightFront = new Limelight("limelight-front");
   Limelight limelightBack = new Limelight("limelight-back");
   //Limelight[] limelights = {limelightFront, limelightBack};
   LimelightPoseEstimator limelightFrontPoseEstimator = limelightFront.createPoseEstimator(EstimationMode.MEGATAG2);
   LimelightPoseEstimator limelightBackPoseEstimator = limelightBack.createPoseEstimator(EstimationMode.MEGATAG2);
-
+*/
   private Field2d field;
   public SwerveDrive swerveDrive;
   private File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
 
   public SwerveSubsystem() {
 // Set the limelight to use Pipeline LED control, with the Camera offset of 0, and save.
-    limelightFront.getSettings()
+    /*limelightFront.getSettings()
          .withLimelightLEDMode(LEDMode.PipelineControl)
          .withCameraOffset(Pose3d.kZero)
          .save();
@@ -62,10 +62,10 @@ public class SwerveSubsystem extends SubsystemBase {
     limelightBack.getSettings()
          .withLimelightLEDMode(LEDMode.PipelineControl)
          .withCameraOffset(Pose3d.kZero)
-         .save();
+         .save();*/
 // TODO: Limelight pozlarını ekle
     RobotConfig config;
-    SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.NONE;
+    SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
     try {
       config = RobotConfig.fromGUISettings();
       boolean enableFeedforward = true;
@@ -224,7 +224,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     swerveDrive.updateOdometry();
 
-
+/*  
     limelightFront.getSettings()
 		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
 												 new AngularVelocity3d(DegreesPerSecond.of(0)
@@ -250,6 +250,6 @@ public class SwerveSubsystem extends SubsystemBase {
         swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);
       }
     );
-    swerveDrive.swerveDrivePoseEstimator.update(swerveDrive.getGyro().getRotation3d().toRotation2d(), swerveDrive.getModulePositions());
+    swerveDrive.swerveDrivePoseEstimator.update(swerveDrive.getGyro().getRotation3d().toRotation2d(), swerveDrive.getModulePositions());*/
   }
 }
