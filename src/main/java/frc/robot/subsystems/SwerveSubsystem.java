@@ -241,47 +241,34 @@ limelightBack.getSettings()
     swerveDrive.drive(chassisSpeeds);
   }
 
-  @Override
-  public void periodic() {
 
+@Override
+public void periodic() {
+    // Gyro verisini Limelight'a gönder (MegaTag2 için şart)
+    double yawVelocity = swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond);
+    
     limelightBack.getSettings()
-		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
-												 new AngularVelocity3d(DegreesPerSecond.of(0)
-                         ,DegreesPerSecond.of(0),
-                          DegreesPerSecond.of(swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond)))));
-		 
+        .withRobotOrientation(new Orientation3d(
+            swerveDrive.getGyro().getRotation3d(),
+            new AngularVelocity3d(DegreesPerSecond.of(0), DegreesPerSecond.of(0), DegreesPerSecond.of(yawVelocity))
+        ));
+
     Optional<PoseEstimate> est1 = limelightBackPoseEstimator.getPoseEstimate();
-        est1.ifPresent(
-      (PoseEstimate estimate) -> {
-        swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);
-      });
 
-        /*  
-    limelightFront.getSettings()
-		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
-												 new AngularVelocity3d(DegreesPerSecond.of(0)
-                         ,DegreesPerSecond.of(0),
-                          DegreesPerSecond.of(swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond)))))
-		    .save();
-    limelightFront.getSettings()
-		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
-												 new AngularVelocity3d(DegreesPerSecond.of(0)
-                         ,DegreesPerSecond.of(0),
-                          DegreesPerSecond.of(swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond)))))
-		    .save();
-    Optional<PoseEstimate> est1 = limelightFrontPoseEstimator.getPoseEstimate();
-    Optional<PoseEstimate> est2 = limelightBackPoseEstimator.getPoseEstimate();
+    est1.ifPresent(estimate -> {
 
-    est1.ifPresent(
-      (PoseEstimate estimate) -> {
-        swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);
-      }
-    );
-    est2.ifPresent(
-      (PoseEstimate estimate) -> {
-        swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);
-      }
-    );
-    swerveDrive.swerveDrivePoseEstimator.update(swerveDrive.getGyro().getRotation3d().toRotation2d(), swerveDrive.getModulePositions());*/
-    }
+        if (estimate.tagCount == 0 || estimate.avgTagDist > 4.5) return;
+
+        Pose2d currentPose = swerveDrive.getPose();
+        Pose2d visionPose = estimate.pose.toPose2d();
+
+        if (currentPose.getTranslation().getDistance(visionPose.getTranslation()) < 1.0) {
+            swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
+                visionPose,
+                estimate.timestampSeconds
+            );
+        }
+    });
+    field.setRobotPose(swerveDrive.getPose());
+  }
 }
