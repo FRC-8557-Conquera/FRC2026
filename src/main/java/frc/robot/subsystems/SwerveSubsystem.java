@@ -154,9 +154,9 @@ limelightBack.getSettings()
   public Command driveCommand(
       DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX) {
     return run(() -> {
-      double x = MathUtil.applyDeadband(translationX.getAsDouble(), 0.05);
-      double y = MathUtil.applyDeadband(translationY.getAsDouble(), 0.05);
-      double omega = MathUtil.applyDeadband(angularRotationX.getAsDouble(), 0.05);
+      double x = MathUtil.applyDeadband(translationX.getAsDouble(), 0.1);
+      double y = MathUtil.applyDeadband(translationY.getAsDouble(), 0.1);
+      double omega = MathUtil.applyDeadband(angularRotationX.getAsDouble(), 0.1);
 
       swerveDrive.drive(
           new Translation2d(
@@ -247,11 +247,16 @@ public void periodic() {
     // Gyro verisini Limelight'a gönder (MegaTag2 için şart)
     double yawVelocity = swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond);
     
-    limelightBack.getSettings()
-        .withRobotOrientation(new Orientation3d(
-            swerveDrive.getGyro().getRotation3d(),
-            new AngularVelocity3d(DegreesPerSecond.of(0), DegreesPerSecond.of(0), DegreesPerSecond.of(yawVelocity))
-        ));
+    limelightBack.getSettings().withRobotOrientation(
+    new Orientation3d(
+        swerveDrive.getGyro().getRotation3d(),
+        new AngularVelocity3d(
+            DegreesPerSecond.of(0),
+            DegreesPerSecond.of(0),
+            DegreesPerSecond.of(yawVelocity)
+        )
+    )
+);
 
     Optional<PoseEstimate> est1 = limelightBackPoseEstimator.getPoseEstimate();
 
@@ -262,13 +267,21 @@ public void periodic() {
         Pose2d currentPose = swerveDrive.getPose();
         Pose2d visionPose = estimate.pose.toPose2d();
 
-        if (currentPose.getTranslation().getDistance(visionPose.getTranslation()) < 1.0) {
+        double translationError =
+        currentPose.getTranslation().getDistance(visionPose.getTranslation());
+
+        double rotationError =
+        Math.abs(currentPose.getRotation().minus(visionPose.getRotation()).getDegrees());
+
+        if (translationError < 1.0 && rotationError < 25.0) {
             swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
                 visionPose,
                 estimate.timestampSeconds
-            );
-        }
+  );
+}
     });
     field.setRobotPose(swerveDrive.getPose());
   }
 }
+
+//TODO: Feedforward for drive and angle motors
