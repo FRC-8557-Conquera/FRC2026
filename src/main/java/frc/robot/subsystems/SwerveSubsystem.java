@@ -247,9 +247,6 @@ limelightBack.getSettings()
         swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(estimate.pose.toPose2d(), estimate.timestampSeconds);}
     );
 
-        swerveDrive.swerveDrivePoseEstimator.update(swerveDrive.getGyro().getRotation3d().toRotation2d(), swerveDrive.getModulePositions());
-
-
         /*  
     limelightFront.getSettings()
 		    .withRobotOrientation(new Orientation3d(swerveDrive.getGyro().getRotation3d(),
