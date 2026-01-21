@@ -6,6 +6,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.estimator.PoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -83,14 +84,6 @@ limelightBack.getSettings()
       config = RobotConfig.fromGUISettings();
       boolean enableFeedforward = true;
       swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(Constants.Swerve.maxSpeed);
-
-    swerveDrive.swerveDrivePoseEstimator.setVisionMeasurementStdDevs(
-      VecBuilder.fill(
-        0.5,   // X (m)
-        0.5,   // Y (m)
-        Math.toRadians(999) // heading = gyro only
-    )
-);
       AutoBuilder.configure(
           this::getPose,
           this::resetOdometry,
@@ -244,42 +237,21 @@ limelightBack.getSettings()
 
 @Override
 public void periodic() {
-    // Gyro verisini Limelight'a gönder (MegaTag2 için şart)
     double yawVelocity = swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond);
-    
+
     limelightBack.getSettings().withRobotOrientation(
     new Orientation3d(
         swerveDrive.getGyro().getRotation3d(),
         new AngularVelocity3d(
             DegreesPerSecond.of(0),
             DegreesPerSecond.of(0),
-            DegreesPerSecond.of(yawVelocity)
-        )
-    )
-);
-
+            DegreesPerSecond.of(yawVelocity))))     .save();
+            
     Optional<PoseEstimate> est1 = limelightBackPoseEstimator.getPoseEstimate();
+    est1.ifPresent((PoseEstimate poseEstimate) -> {
+   // Add it to the pose estimator.
+    swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(poseEstimate.pose.toPose2d(), poseEstimate.timestampSeconds);   });
 
-    est1.ifPresent(estimate -> {
-
-        if (estimate.tagCount == 0 || estimate.avgTagDist > 4.5) return;
-
-        Pose2d currentPose = swerveDrive.getPose();
-        Pose2d visionPose = estimate.pose.toPose2d();
-
-        double translationError =
-        currentPose.getTranslation().getDistance(visionPose.getTranslation());
-
-        double rotationError =
-        Math.abs(currentPose.getRotation().minus(visionPose.getRotation()).getDegrees());
-
-        if (translationError < 1.0 && rotationError < 25.0) {
-            swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
-                visionPose,
-                estimate.timestampSeconds
-  );
-}
-    });
     field.setRobotPose(swerveDrive.getPose());
   }
 }
